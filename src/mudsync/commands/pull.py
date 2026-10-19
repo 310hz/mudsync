@@ -15,10 +15,8 @@ def command(patterns: list[str], verbose: bool = False) -> None:
     project_config = require_project_config(project_root)
     ssh_info = get_host_config(project_config.server)
 
-    data_includes = project_config.data_includes
-    conflicting = [
-        p for p in patterns if p in data_includes or p.rstrip("/") in data_includes
-    ]
+    data_items = {d.strip("/") for d in project_config.data_includes}
+    conflicting = [p for p in patterns if p.strip("/") in data_items]
     if conflicting:
         raise SystemExit(
             f"Error: Cannot pull data directory items via symlink: {', '.join(conflicting)}\n"

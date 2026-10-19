@@ -2,10 +2,6 @@
 
 コードを読んで見つけたもの。未着手。
 
-## 要確認（仕様か不具合か不明）
-
-- **push / pull のパターンが任意の深さにマッチする。** `msync pull data/` は直下の `data/` だけでなく `src/pkg/data/` も取ってくる。ファイル名だけで指定できる手軽さとのトレードオフなので、変えるかどうかはユーザー判断（[spec/transfer.md](../spec/transfer.md)）。
-
 ## 改善候補
 
 - `msync info` が `data_dir` を表示しない。

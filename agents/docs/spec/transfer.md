@@ -22,10 +22,10 @@
 
 指定パターンだけを転送する。`excludes` は参照しない。
 
-フィルタは `--prune-empty-dirs --include=*/ --include=<P> --include=<P>/** ... --exclude=*`（`commands/sync.py` の `build_filtered_transfer_options`）。パターンは rsync のフィルタ構文としてそのまま解釈され、sync と違って先頭 `/` は付けない。そのため `msync pull model.pth` はどの深さの `model.pth` にもマッチする。
+フィルタは `--prune-empty-dirs --include=*/ --include=<P> --include=<P>/** ... --exclude=*`（`commands/sync.py` の `build_filtered_transfer_options`）。パターンは sync と同じく先頭に `/` を付けて、プロジェクトルートからのパスとして扱う（`msync pull data/` は直下の `data/` だけ）。ワイルドカードは rsync のフィルタ構文で解釈される。`*.pth` は直下だけにマッチし、`**/*.pth` はサブディレクトリ内だけにマッチする（直下の `model.pth` には当たらない）。全階層を対象にするには両方を指定する。
 
 - `push`: プロジェクトルート → `remote_path`
-- `pull`: `remote_path` → プロジェクトルート。`data_includes` と一致するパターンはエラーで拒否する（リモート側はシンボリックリンクなので）。
+- `pull`: `remote_path` → プロジェクトルート。`data_includes` の項目と一致するパターンは、前後の `/` の有無を無視して比較し、エラーで拒否する（リモート側はシンボリックリンクなので）。
 
 ## 関連コマンド
 

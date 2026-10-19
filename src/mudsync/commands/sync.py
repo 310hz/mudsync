@@ -36,7 +36,7 @@ def build_rsync_command(
 
 def build_filtered_transfer_options(patterns: list[str]) -> list[str]:
     options = ["--prune-empty-dirs", "--include=*/"]
-    for pattern in patterns:
+    for pattern in map(anchor_rule, patterns):
         options.append(f"--include={pattern}")
         base = pattern.rstrip("/")
         options.append(f"--include={base}/**")
@@ -117,9 +117,7 @@ def command(delete: bool = False, verbose: bool = False):
 
         run_ssh_command(ssh_info, f"mkdir -p {shlex.quote(data_dir)}", verbose=verbose)
 
-        data_options = build_filtered_transfer_options(
-            [anchor_rule(p) for p in data_includes]
-        )
+        data_options = build_filtered_transfer_options(data_includes)
 
         data_rsync_cmd = build_rsync_command(
             source=f"{project_root}/",
