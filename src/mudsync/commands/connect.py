@@ -13,7 +13,7 @@ def command(verbose: bool = False):
     project_config = require_project_config(project_root)
     ssh_info = get_host_config(project_config.server)
 
-    remote_path = project_config.remote_path
+    remote_path = shlex.quote(project_config.remote_path)
 
     ssh_cmd = [
         "ssh",

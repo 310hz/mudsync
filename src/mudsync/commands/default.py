@@ -54,6 +54,9 @@ def command():
         keybindings=_CANCEL_KEYBINDINGS,
         raise_keyboard_interrupt=False,
     ).execute()
+    if data_dir is None:
+        typer.echo("Config cancelled.")
+        raise typer.Exit(code=0)
     data_dir = data_dir.strip() or None
 
     config = AppConfig(
