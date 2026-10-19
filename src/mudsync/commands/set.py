@@ -76,10 +76,14 @@ def command():
         keybindings=_CANCEL_KEYBINDINGS,
         raise_keyboard_interrupt=False,
     ).execute()
-    data_dir = data_dir.strip() or None if data_dir else None
+    if data_dir is None:
+        typer.echo("Set cancelled.")
+        raise typer.Exit(code=0)
+    data_dir = data_dir.strip() or None
 
     existing_excludes = existing_config.excludes if existing_config else []
     existing_data_includes = existing_config.data_includes if existing_config else []
+    existing_auto_excluded = existing_config.auto_excluded if existing_config else []
 
     project_config = ProjectConfig(
         server=ssh_host,
@@ -87,6 +91,7 @@ def command():
         excludes=existing_excludes,
         data_dir=data_dir,
         data_includes=existing_data_includes,
+        auto_excluded=existing_auto_excluded,
     )
     save_project_config(project_root, project_config)
 

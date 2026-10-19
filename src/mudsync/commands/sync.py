@@ -9,7 +9,7 @@ from mudsync.commands.compose import build_ssh_command
 from mudsync.project import require_project
 from mudsync.ssh_config import SSHHost
 from mudsync.ssh_config import get_host_config
-from mudsync.sync_rules import get_excludes, require_project_config
+from mudsync.sync_rules import anchor_rule, get_exclude_rules, require_project_config
 
 
 def build_rsync_ssh_option(ssh_info: SSHHost) -> str:
@@ -32,6 +32,16 @@ def build_rsync_command(
     rsync_cmd.append(str(source))
     rsync_cmd.append(destination)
     return rsync_cmd
+
+
+def build_filtered_transfer_options(patterns: list[str]) -> list[str]:
+    options = ["--prune-empty-dirs", "--include=*/"]
+    for pattern in patterns:
+        options.append(f"--include={pattern}")
+        base = pattern.rstrip("/")
+        options.append(f"--include={base}/**")
+    options.append("--exclude=*")
+    return options
 
 
 def run_rsync(rsync_cmd: list[str], verbose: bool = False) -> None:
@@ -72,8 +82,7 @@ def command(delete: bool = False, verbose: bool = False):
     data_dir = project_config.data_dir
     data_includes = project_config.data_includes
 
-    excludes = get_excludes(project_root)
-    exclude_lines = list(excludes) + data_includes
+    exclude_lines = get_exclude_rules(project_config)
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
         f.write("\n".join(exclude_lines) + "\n")
@@ -108,12 +117,9 @@ def command(delete: bool = False, verbose: bool = False):
 
         run_ssh_command(ssh_info, f"mkdir -p {shlex.quote(data_dir)}", verbose=verbose)
 
-        data_options = ["--prune-empty-dirs", "--include=*/"]
-        for pattern in data_includes:
-            data_options.append(f"--include={pattern}")
-            base = pattern.rstrip("/")
-            data_options.append(f"--include={base}/**")
-        data_options.append("--exclude=*")
+        data_options = build_filtered_transfer_options(
+            [anchor_rule(p) for p in data_includes]
+        )
 
         data_rsync_cmd = build_rsync_command(
             source=f"{project_root}/",

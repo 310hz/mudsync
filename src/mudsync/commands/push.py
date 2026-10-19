@@ -1,19 +1,13 @@
 import typer
 
-from mudsync.commands.sync import build_rsync_command, run_rsync
+from mudsync.commands.sync import (
+    build_filtered_transfer_options,
+    build_rsync_command,
+    run_rsync,
+)
 from mudsync.project import require_project
 from mudsync.ssh_config import get_host_config
 from mudsync.sync_rules import require_project_config
-
-
-def build_filtered_transfer_options(patterns: list[str]) -> list[str]:
-    options = ["--prune-empty-dirs", "--include=*/"]
-    for pattern in patterns:
-        options.append(f"--include={pattern}")
-        base = pattern.rstrip("/")
-        options.append(f"--include={base}/**")
-    options.append("--exclude=*")
-    return options
 
 
 def command(patterns: list[str], verbose: bool = False) -> None:

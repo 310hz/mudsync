@@ -24,6 +24,7 @@ class ProjectConfig:
     excludes: list[str] = field(default_factory=list)
     data_dir: str | None = None
     data_includes: list[str] = field(default_factory=list)
+    auto_excluded: list[str] = field(default_factory=list)
 
 
 def _msync_json_path(project_root: Path) -> Path:
@@ -37,6 +38,7 @@ def load_project_config(project_root: Path) -> Optional[ProjectConfig]:
     data = json.loads(path.read_text())
     data.setdefault("data_dir", None)
     data.setdefault("data_includes", [])
+    data.setdefault("auto_excluded", [])
     return ProjectConfig(**data)
 
 
@@ -50,6 +52,7 @@ def save_project_config(project_root: Path, config: ProjectConfig) -> None:
                 "excludes": config.excludes,
                 "data_dir": config.data_dir,
                 "data_includes": config.data_includes,
+                "auto_excluded": config.auto_excluded,
             },
             indent=2,
         )
@@ -64,10 +67,13 @@ def require_project_config(project_root: Path) -> ProjectConfig:
     return config
 
 
-def get_excludes(project_root: Path) -> list[str]:
-    config = load_project_config(project_root)
-    excludes = list(config.excludes) if config else []
-    for pattern in DEFAULT_GLOBAL_EXCLUDES:
-        if pattern not in excludes:
-            excludes.append(pattern)
-    return excludes
+def anchor_rule(pattern: str) -> str:
+    return "/" + pattern.lstrip("/")
+
+
+def get_exclude_rules(config: ProjectConfig) -> list[str]:
+    # Project rules are paths from the project root, but unanchored rsync patterns
+    # match at any depth ("data/" would also exclude "src/pkg/data/").
+    # Global excludes are meant to match at any depth, so they stay unanchored.
+    rules = [anchor_rule(p) for p in [*config.excludes, *config.data_includes]]
+    return [*rules, *DEFAULT_GLOBAL_EXCLUDES]

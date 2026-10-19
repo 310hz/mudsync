@@ -16,7 +16,6 @@ from mudsync.project import require_project
 from mudsync.sync_rules import (
     ProjectConfig,
     DEFAULT_GLOBAL_EXCLUDES,
-    load_project_config,
     require_project_config,
     save_project_config,
 )
@@ -77,6 +76,16 @@ def calc_dir_size(path: Path) -> int:
     except (OSError, PermissionError):
         pass
     return total
+
+
+def is_global_excluded(path: Path) -> bool:
+    name = path.name
+    for pattern in DEFAULT_GLOBAL_EXCLUDES:
+        if name == pattern.rstrip("/"):
+            return True
+        if ("*" in pattern or "?" in pattern) and fnmatch.fnmatch(name, pattern):
+            return True
+    return False
 
 
 def _rel_str(path: Path, project_root: Path) -> str:
@@ -171,15 +180,7 @@ class FileBrowser:
         self._global_state_version += 1
 
     def _is_global_excluded(self, path: Path) -> bool:
-        name = path.name
-        for pattern in DEFAULT_GLOBAL_EXCLUDES:
-            base = pattern.rstrip("/")
-            if name == base:
-                return True
-            if "*" in pattern or "?" in pattern:
-                if fnmatch.fnmatch(name, pattern):
-                    return True
-        return False
+        return is_global_excluded(path)
 
     def refresh_items(self):
         self._scan_dir(self.current_dir)
@@ -648,26 +649,37 @@ def _compact_rules(config: ProjectConfig, project_root: Path) -> ProjectConfig:
         excludes=new_excludes,
         data_dir=config.data_dir,
         data_includes=new_data_includes,
+        auto_excluded=config.auto_excluded,
     )
+
+
+def _auto_exclude_large_items(config: ProjectConfig, project_root: Path) -> None:
+    # Each item is auto-excluded only once, so that a user who switches it back
+    # to include keeps that choice.
+    for item in project_root.iterdir():
+        if is_global_excluded(item):
+            continue
+        rs = _rel_str(item, project_root)
+        if rs in config.auto_excluded:
+            continue
+        if item.is_file():
+            is_large = get_file_size(item) > 10 * 1024 * 1024
+        elif item.is_dir():
+            is_large = count_dir_items(item) > 100
+        else:
+            is_large = False
+        if not is_large:
+            continue
+        config.auto_excluded.append(rs)
+        if rs not in config.excludes and rs not in config.data_includes:
+            config.excludes.append(rs)
 
 
 def command():
     project_root = require_project()
     project_config = require_project_config(project_root)
 
-    for item in project_root.iterdir():
-        if item.is_file():
-            size = get_file_size(item)
-            if size > 10 * 1024 * 1024:
-                rs = _rel_str(item, project_root)
-                if rs not in project_config.excludes:
-                    project_config.excludes.append(rs)
-        elif item.is_dir():
-            item_count = count_dir_items(item)
-            if item_count > 100:
-                rs = _rel_str(item, project_root)
-                if rs not in project_config.excludes:
-                    project_config.excludes.append(rs)
+    _auto_exclude_large_items(project_config, project_root)
 
     app_ref = [None]
 

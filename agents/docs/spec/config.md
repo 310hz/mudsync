@@ -24,15 +24,17 @@
   "remote_path": "/home/<lab>/<user>/<project>",
   "excludes": ["dummy.txt", "outputs/"],
   "data_dir": "/raid/data/<lab>/<user>/<project>",
-  "data_includes": ["dataset/"]
+  "data_includes": ["dataset/"],
+  "auto_excluded": ["dataset/", "big.bin"]
 }
 ```
 
 - `server`: `~/.ssh/config` の Host 名。キー名がデフォルト設定（`ssh_host`）と異なる点に注意。
 - `excludes` / `data_includes`: 同期ルール。`msync manage` が書き換える。手で編集してもよい。
-- `data_dir` / `data_includes` は欠けていても読み込める（後から追加されたキー）。
+- `auto_excluded`: `manage` の自動除外を一度適用した項目の記録（[spec/manage.md](manage.md)）。同期ルールそのものではない。
+- `data_dir` / `data_includes` / `auto_excluded` は欠けていても読み込める（後から追加されたキー）。
 
-`msync set` を再実行すると、既存の `msync.json` の値が入力の初期値になり、`excludes` と `data_includes` は保持される。
+`msync set` を再実行すると、既存の `msync.json` の値が入力の初期値になり、`excludes` / `data_includes` / `auto_excluded` は保持される。どの入力でも Esc / Ctrl-C を押すと保存せずに終了する（`msync default` も同じ）。
 
 `msync.json` は個人のサーバーパスを含むため、リポジトリにはコミットしない運用（本リポジトリではユーザーのグローバル gitignore で除外されている）。また同期対象からは常に除外される。
 

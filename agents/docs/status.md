@@ -12,5 +12,4 @@ README に書かれた機能（default / set / info / connect / manage / sync / 
 
 ## 未解決事項
 
-- 見つかっているバグ・改善候補は [todo/known-issues.md](todo/known-issues.md)。
-- README のインストール手順・clone 先が `github.com/misya11p/mudsync` になっているが、git remote は `github.com/310hz/mudsync`。README は編集禁止なので、直すかどうかはユーザー判断。
+見つかっている問題・改善候補は [todo/known-issues.md](todo/known-issues.md)。

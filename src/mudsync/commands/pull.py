@@ -1,7 +1,10 @@
 import typer
 
-from mudsync.commands.push import build_filtered_transfer_options
-from mudsync.commands.sync import build_rsync_command, run_rsync
+from mudsync.commands.sync import (
+    build_filtered_transfer_options,
+    build_rsync_command,
+    run_rsync,
+)
 from mudsync.project import require_project
 from mudsync.ssh_config import get_host_config
 from mudsync.sync_rules import require_project_config
