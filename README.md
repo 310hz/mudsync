@@ -15,10 +15,10 @@
 
 ```
 # pip
-pip install git+https://github.com/misya11p/mudsync.git
+pip install git+https://github.com/310hz/mudsync.git
 
 # uv
-uv tool install git+https://github.com/misya11p/mudsync.git
+uv tool install git+https://github.com/310hz/mudsync.git
 ```
 
 下記コマンドを実行し、サーバー情報のデフォルト値を設定してください。
@@ -104,7 +104,7 @@ msync run python train.py --epochs 10
 まずは上記コマンドに従ってインストールとデフォルト値の設定を行ってください。その後、本リポジトリをクローンし、チュートリアル用のディレクトリに移動してください。
 
 ```
-git clone https://github.com/misya11p/mudsync.git
+git clone https://github.com/310hz/mudsync.git
 cd mudsync/tutorial
 ```
 
