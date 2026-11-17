@@ -1,6 +1,14 @@
 # 転送（sync / push / pull）
 
-すべて `rsync -avz` をローカルから実行する（`commands/sync.py` の `build_rsync_command`）。rsync には `-e "ssh -o StrictHostKeyChecking=no ..."` を渡している。
+すべて `rsync -az` をローカルから実行する（`commands/sync.py` の `build_rsync_command`）。rsync には `-e "ssh -o StrictHostKeyChecking=no ..."` を渡している。
+
+## 共通オプション
+
+sync / push / pull の3コマンドに共通。`run --sync` から呼ぶ sync はデフォルトのまま。
+
+- **partial（デフォルト有効、`--no-partial` で無効）**: `--partial-dir=.rsync-partial` を付ける。中断した転送の途中ファイルを転送先の各ディレクトリの `.rsync-partial/` に残し、次回の転送で続きから再開する。`--partial` 単体だと途中ファイルが本来の名前で転送先に置かれ、壊れたファイルが完成品と区別できなくなるので partial-dir を使っている。
+- **`.rsync-partial/` の除外（常に付与）**: `--exclude=.rsync-partial/` を他のフィルタより前に置く。rsync は相対パスの partial-dir を自動で除外するが、その除外ルールはすべてのフィルタの末尾に追加されるため、push / pull の `--include=*/` に先にマッチしてしまう。これがないと、中断した pull の残りが次の push で送られる。
+- **進捗表示（デフォルト有効、`-q/--quiet` で無効）**: 通常は `-v --progress` を付けてファイル一覧と進捗を表示する。`--quiet` ではこの2つを外し、msync 自身のメッセージ（`Syncing ...` など）も出さない。エラーは出る。`--verbose` によるコマンド表示は `--quiet` と併用できる。
 
 ## `msync sync`
 

@@ -10,7 +10,13 @@ from mudsync.ssh_config import get_host_config
 from mudsync.sync_rules import require_project_config
 
 
-def command(patterns: list[str], verbose: bool = False) -> None:
+def command(
+    patterns: list[str],
+    partial: bool = True,
+    quiet: bool = False,
+    verbose: bool = False,
+) -> None:
+    echo = (lambda *_: None) if quiet else typer.echo
     project_root = require_project()
     project_config = require_project_config(project_root)
     ssh_info = get_host_config(project_config.server)
@@ -32,13 +38,15 @@ def command(patterns: list[str], verbose: bool = False) -> None:
         destination=destination,
         ssh_info=ssh_info,
         options=build_filtered_transfer_options(patterns),
+        partial=partial,
+        quiet=quiet,
     )
 
-    typer.echo(f"Syncing(remote->local, filtered): {source} -> {destination}")
-    typer.echo(f"Patterns: {len(patterns)}")
-    typer.echo()
+    echo(f"Syncing(remote->local, filtered): {source} -> {destination}")
+    echo(f"Patterns: {len(patterns)}")
+    echo()
 
     run_rsync(rsync_cmd, verbose=verbose)
 
-    typer.echo()
-    typer.echo("Pull completed successfully.")
+    echo()
+    echo("Pull completed successfully.")

@@ -62,6 +62,16 @@ def sync(
         "--delete",
         help="Delete extraneous files from destination (rsync --delete)",
     ),
+    partial: bool = typer.Option(
+        True,
+        "--partial/--no-partial",
+        help="Keep partially transferred files so an interrupted transfer can resume",
+    ),
+    quiet: bool = typer.Option(
+        False,
+        "--quiet", "-q",
+        help="Suppress file list, progress, and status messages",
+    ),
     verbose: bool = typer.Option(
         False,
         "--verbose", "-v",
@@ -69,7 +79,7 @@ def sync(
     ),
 ):
     """Sync local project to GPU server via rsync"""
-    sync_cmd.command(delete=delete, verbose=verbose)
+    sync_cmd.command(delete=delete, partial=partial, quiet=quiet, verbose=verbose)
 
 
 @app.command()
@@ -79,6 +89,16 @@ def push(
         metavar="PATTERN [PATTERN ...]",
         help="Glob patterns to transfer from local to remote",
     ),
+    partial: bool = typer.Option(
+        True,
+        "--partial/--no-partial",
+        help="Keep partially transferred files so an interrupted transfer can resume",
+    ),
+    quiet: bool = typer.Option(
+        False,
+        "--quiet", "-q",
+        help="Suppress file list, progress, and status messages",
+    ),
     verbose: bool = typer.Option(
         False,
         "--verbose", "-v",
@@ -86,7 +106,7 @@ def push(
     ),
 ):
     """Push filtered files from local project to GPU server"""
-    push_cmd.command(patterns, verbose=verbose)
+    push_cmd.command(patterns, partial=partial, quiet=quiet, verbose=verbose)
 
 
 @app.command()
@@ -96,6 +116,16 @@ def pull(
         metavar="PATTERN [PATTERN ...]",
         help="Glob patterns to transfer from remote to local",
     ),
+    partial: bool = typer.Option(
+        True,
+        "--partial/--no-partial",
+        help="Keep partially transferred files so an interrupted transfer can resume",
+    ),
+    quiet: bool = typer.Option(
+        False,
+        "--quiet", "-q",
+        help="Suppress file list, progress, and status messages",
+    ),
     verbose: bool = typer.Option(
         False,
         "--verbose", "-v",
@@ -103,7 +133,7 @@ def pull(
     ),
 ):
     """Pull filtered files from GPU server to local project"""
-    pull_cmd.command(patterns, verbose=verbose)
+    pull_cmd.command(patterns, partial=partial, quiet=quiet, verbose=verbose)
 
 
 @app.command()

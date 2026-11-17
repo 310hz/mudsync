@@ -11,6 +11,8 @@ from mudsync.ssh_config import SSHHost
 from mudsync.ssh_config import get_host_config
 from mudsync.sync_rules import anchor_rule, get_exclude_rules, require_project_config
 
+PARTIAL_DIR = ".rsync-partial"
+
 
 def build_rsync_ssh_option(ssh_info: SSHHost) -> str:
     ssh_opts = "-o StrictHostKeyChecking=no"
@@ -26,8 +28,19 @@ def build_rsync_command(
     destination: str,
     ssh_info: SSHHost,
     options: list[str] | None = None,
+    partial: bool = True,
+    quiet: bool = False,
 ) -> list[str]:
-    rsync_cmd = ["rsync", "-avz", *(options or [])]
+    rsync_cmd = ["rsync", "-az"]
+    if not quiet:
+        rsync_cmd.extend(["-v", "--progress"])
+    if partial:
+        rsync_cmd.append(f"--partial-dir={PARTIAL_DIR}")
+    # rsync auto-excludes a relative partial-dir only after all other rules, so the
+    # push/pull filter's --include=*/ would match it first. A leftover partial-dir
+    # from an interrupted pull must not be sent by a later push.
+    rsync_cmd.append(f"--exclude={PARTIAL_DIR}/")
+    rsync_cmd.extend(options or [])
     rsync_cmd.extend(["-e", build_rsync_ssh_option(ssh_info)])
     rsync_cmd.append(str(source))
     rsync_cmd.append(destination)
@@ -73,7 +86,13 @@ def run_ssh_command(ssh_info: SSHHost, remote_command: str, verbose: bool = Fals
         raise SystemExit("Error: ssh command not found") from exc
 
 
-def command(delete: bool = False, verbose: bool = False):
+def command(
+    delete: bool = False,
+    partial: bool = True,
+    quiet: bool = False,
+    verbose: bool = False,
+):
+    echo = (lambda *_: None) if quiet else typer.echo
     project_root = require_project()
     project_config = require_project_config(project_root)
     ssh_info = get_host_config(project_config.server)
@@ -97,12 +116,14 @@ def command(delete: bool = False, verbose: bool = False):
         destination=f"{ssh_info.user}@{ssh_info.hostname}:{remote_path}/",
         ssh_info=ssh_info,
         options=rsync_options,
+        partial=partial,
+        quiet=quiet,
     )
 
-    typer.echo(
+    echo(
         f"Syncing {project_root} -> {ssh_info.user}@{ssh_info.hostname}:{remote_path}/"
     )
-    typer.echo(f"Excludes: {len(exclude_lines)} rules")
+    echo(f"Excludes: {len(exclude_lines)} rules")
 
     try:
         run_rsync(rsync_cmd, verbose=verbose)
@@ -112,8 +133,8 @@ def command(delete: bool = False, verbose: bool = False):
         os.unlink(exclude_file)
 
     if data_dir and data_includes:
-        typer.echo()
-        typer.echo(f"Syncing {len(data_includes)} data items to {data_dir}")
+        echo()
+        echo(f"Syncing {len(data_includes)} data items to {data_dir}")
 
         run_ssh_command(ssh_info, f"mkdir -p {shlex.quote(data_dir)}", verbose=verbose)
 
@@ -124,6 +145,8 @@ def command(delete: bool = False, verbose: bool = False):
             destination=f"{ssh_info.user}@{ssh_info.hostname}:{data_dir}/",
             ssh_info=ssh_info,
             options=data_options,
+            partial=partial,
+            quiet=quiet,
         )
 
         run_rsync(data_rsync_cmd, verbose=verbose)
@@ -139,7 +162,7 @@ def command(delete: bool = False, verbose: bool = False):
         if symlink_parts:
             remote_command = " && ".join(symlink_parts)
             run_ssh_command(ssh_info, remote_command, verbose=verbose)
-            typer.echo(f"Created {len(data_includes)} data symlinks")
+            echo(f"Created {len(data_includes)} data symlinks")
 
-    typer.echo()
-    typer.echo("Sync completed successfully.")
+    echo()
+    echo("Sync completed successfully.")
